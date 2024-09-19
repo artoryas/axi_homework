@@ -1,95 +1,133 @@
-import Image from "next/image";
-import styles from "./page.module.css";
+"use client";
+
+import Table from "@/components/Table/Table";
+import styles from "./page.module.scss";
+import { useState } from "react";
+import { Counter } from "./types/common";
+import InitialState from "@/components/InitialState/InitialState";
+import {
+  COUNTERS_INITIAL_STATE,
+  MAX_PROCESSING_TIME,
+  MIN_PROCESSING_TIME,
+} from "./constants/common";
+import TableItem from "@/components/TableItem/TableItem";
 
 export default function Home() {
-  return (
-    <div className={styles.page}>
-      <main className={styles.main}>
-        <Image
-          className={styles.logo}
-          src="https://nextjs.org/icons/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol>
-          <li>
-            Get started by editing <code>src/app/page.tsx</code>.
-          </li>
-          <li>Save and see your changes instantly.</li>
-        </ol>
+  const [counters, setCounters] = useState<Counter[]>(COUNTERS_INITIAL_STATE);
+  const [liveCustomers, setLiveCustomers] = useState<number[]>([]);
+  const [initialCustomers, setInitialCustomers] = useState<number>(10);
+  const [isEditMode, setIsEditMode] = useState(false);
 
-        <div className={styles.ctas}>
-          <a
-            className={styles.primary}
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className={styles.logo}
-              src="https://nextjs.org/icons/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-            className={styles.secondary}
-          >
-            Read our docs
-          </a>
-        </div>
-      </main>
-      <footer className={styles.footer}>
-        <a
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="https://nextjs.org/icons/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
+  const handleProcessingTimeChange = (id: number, value: string) => {
+    const processingTime = Number(value);
+
+    if (isNaN(processingTime)) return;
+
+    setCounters((state) =>
+      state.map((counter) =>
+        counter.id === id ? { ...counter, processingTime } : counter
+      )
+    );
+  };
+
+  /**
+   * Event listener when the user finishes typing the processing time value
+   */
+  const handleInputBlur = (id: number) => {
+    const counter = counters.find((item) => item.id === id);
+
+    if (!counter) return;
+
+    /**
+     * If the value is lower than minimal processing time then we set the minimal value
+     */
+    if (counter.processingTime < MIN_PROCESSING_TIME) {
+      setCounters((state) =>
+        state.map((counter) =>
+          counter.id === id
+            ? { ...counter, processingTime: MIN_PROCESSING_TIME }
+            : counter
+        )
+      );
+    }
+
+    /**
+     * If the value is higher than maximal processing time then we set the maximal value
+     */
+    if (counter.processingTime > MAX_PROCESSING_TIME) {
+      setCounters((state) =>
+        state.map((counter) =>
+          counter.id === id
+            ? { ...counter, processingTime: MAX_PROCESSING_TIME }
+            : counter
+        )
+      );
+    }
+  };
+
+  const handleInitialCustomersChange = (value: string) => {
+    const quantity = Number(value);
+
+    if (isNaN(quantity)) return;
+
+    setInitialCustomers(quantity);
+  };
+
+  const handleLiveCustomersChange = (newValue: number[]) => {
+    setLiveCustomers([...newValue]);
+  };
+
+  const addLiveCustomer = (id: number) => {
+    setLiveCustomers((state) => [...state, id]);
+  };
+
+  const changeInit = () => {
+    setLiveCustomers([]);
+
+    if (isEditMode) {
+      setIsEditMode(false);
+
+      startProcess();
+
+      return;
+    }
+
+    setIsEditMode(true);
+  };
+
+  const startProcess = () => {
+    const arrayOfIds = Array.from(
+      { length: initialCustomers },
+      (_, index) => index + 1
+    );
+    setLiveCustomers(arrayOfIds);
+  };
+
+  return (
+    <main className={styles.main}>
+      <h1>Bank counter</h1>
+      <Table liveCustomers={liveCustomers} onAddCustomer={addLiveCustomer}>
+        {counters.map(({ id, name, processingTime }) => (
+          <TableItem
+            key={id}
+            id={id}
+            name={name}
+            reset={isEditMode}
+            processingTime={processingTime}
+            liveCustomers={liveCustomers}
+            onLiveCustomersChange={handleLiveCustomersChange}
           />
-          Learn
-        </a>
-        <a
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="https://nextjs.org/icons/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="https://nextjs.org/icons/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
-    </div>
+        ))}
+      </Table>
+      <InitialState
+        counters={counters}
+        customers={initialCustomers}
+        isDisabled={!isEditMode}
+        onInputChange={handleProcessingTimeChange}
+        onInputBlur={handleInputBlur}
+        onCustomersNumberChange={handleInitialCustomersChange}
+      />
+      <button onClick={changeInit}>Change init</button>
+    </main>
   );
 }

@@ -1,0 +1,25 @@
+.table {
+  border-collapse: collapse;
+
+  th {
+    width: 200px;
+  }
+
+  tr:not(:last-child) {
+    border-bottom: 1px solid black;
+  }
+
+  td {
+    padding-block: 16px;
+  }
+
+  caption {
+    caption-side: bottom;
+
+    div {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+  }
+}

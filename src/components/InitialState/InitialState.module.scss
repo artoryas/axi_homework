@@ -1,0 +1,11 @@
+.initialState {
+  display: grid;
+  row-gap: 16px;
+
+  fieldset {
+    display: grid;
+    justify-items: center;
+    row-gap: 15px;
+    border: none;
+  }
+}
