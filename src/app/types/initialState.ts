@@ -5,6 +5,5 @@ export type InitialStateProps = {
   customers: number;
   isDisabled: boolean;
   onInputChange: (id: number, value: string) => void;
-  onInputBlur: (id: number) => void;
   onCustomersNumberChange: (value: string) => void;
 };

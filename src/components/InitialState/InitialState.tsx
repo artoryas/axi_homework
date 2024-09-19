@@ -6,28 +6,28 @@ export default function InitialState({
   customers,
   isDisabled,
   onInputChange,
-  onInputBlur,
   onCustomersNumberChange,
 }: InitialStateProps) {
   return (
     <form className={styles.initialState}>
-      <fieldset disabled={isDisabled}>
+      <fieldset className={styles.initialState__fieldset} disabled={isDisabled}>
         {counters.map(({ id, name, processingTime }) => (
-          <label key={id}>
+          <label className={styles.initialState__label} key={id}>
             {`${name} Processing Time: `}
             <input
+              className={styles.initialState__input}
               name={name}
               value={processingTime}
               onChange={(event) => onInputChange(id, event.target.value)}
-              onBlur={() => onInputBlur(id)}
-              type="number"
+              type="text"
             />
           </label>
         ))}
-        <label>
+        <label className={styles.initialState__label}>
           Start Number:
           <input
-            type="number"
+            className={styles.initialState__input}
+            type="text"
             value={customers}
             onChange={(event) => onCustomersNumberChange(event.target.value)}
           />

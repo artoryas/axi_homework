@@ -14,10 +14,18 @@ import TableItem from "@/components/TableItem/TableItem";
 
 export default function Home() {
   const [counters, setCounters] = useState<Counter[]>(COUNTERS_INITIAL_STATE);
-  const [liveCustomers, setLiveCustomers] = useState<number[]>([]);
+  const [customersInQueue, setCustomersInQueue] = useState<number[]>([]);
   const [initialCustomers, setInitialCustomers] = useState<number>(10);
   const [isEditMode, setIsEditMode] = useState(false);
+  const [isReset, setIsReset] = useState(false);
+  const [lastCustomerNumber, setLastCustomerNumber] = useState(0);
+  const [hasError, setHasError] = useState<boolean>(false);
 
+  /**
+   * Set processing time of specific counter
+   * @param id - id of counter
+   * @param value - new processing time
+   */
   const handleProcessingTimeChange = (id: number, value: string) => {
     const processingTime = Number(value);
 
@@ -31,41 +39,10 @@ export default function Home() {
   };
 
   /**
-   * Event listener when the user finishes typing the processing time value
+   * Set initial customers number
+   * @param value - new value
    */
-  const handleInputBlur = (id: number) => {
-    const counter = counters.find((item) => item.id === id);
-
-    if (!counter) return;
-
-    /**
-     * If the value is lower than minimal processing time then we set the minimal value
-     */
-    if (counter.processingTime < MIN_PROCESSING_TIME) {
-      setCounters((state) =>
-        state.map((counter) =>
-          counter.id === id
-            ? { ...counter, processingTime: MIN_PROCESSING_TIME }
-            : counter
-        )
-      );
-    }
-
-    /**
-     * If the value is higher than maximal processing time then we set the maximal value
-     */
-    if (counter.processingTime > MAX_PROCESSING_TIME) {
-      setCounters((state) =>
-        state.map((counter) =>
-          counter.id === id
-            ? { ...counter, processingTime: MAX_PROCESSING_TIME }
-            : counter
-        )
-      );
-    }
-  };
-
-  const handleInitialCustomersChange = (value: string) => {
+  const setInitialCustomersNumber = (value: string) => {
     const quantity = Number(value);
 
     if (isNaN(quantity)) return;
@@ -73,21 +50,64 @@ export default function Home() {
     setInitialCustomers(quantity);
   };
 
-  const handleLiveCustomersChange = (newValue: number[]) => {
-    setLiveCustomers([...newValue]);
+  /**
+   * Set new value for customers queue
+   * @param newValue - new value
+   */
+  const handleQueueCustomersChange = (newValue: number[]) => {
+    setCustomersInQueue([...newValue]);
   };
 
-  const addLiveCustomer = (id: number) => {
-    setLiveCustomers((state) => [...state, id]);
+  /**
+   * Append new customer to queue
+   */
+  const addCustomerToQueue = () => {
+    setLastCustomerNumber(lastCustomerNumber + 1);
+    setCustomersInQueue((state) => [...state, lastCustomerNumber + 1]);
   };
 
-  const changeInit = () => {
-    setLiveCustomers([]);
+  /**
+   * Reset all states
+   * @returns
+   */
+  const resetAllState = () =>
+    new Promise<void>((resolve) => {
+      setCustomersInQueue([]);
+      setIsReset(true);
+      setLastCustomerNumber(0);
 
-    if (isEditMode) {
+      setTimeout(() => {
+        setIsReset(false);
+        resolve();
+      }, 0);
+    });
+
+  /**
+   * Validate processing times from user
+   */
+  const hasInvalidTimes = (): boolean => {
+    const hasInvalidTime = counters.some(
+      (counter) =>
+        counter.processingTime < MIN_PROCESSING_TIME ||
+        counter.processingTime > MAX_PROCESSING_TIME
+    );
+
+    setHasError(hasInvalidTime);
+
+    return hasInvalidTime;
+  };
+
+  /**
+   * Handle change of initial states
+   * @returns
+   */
+  const changeInit = async () => {
+    await resetAllState();
+
+    if (isEditMode && !hasInvalidTimes()) {
       setIsEditMode(false);
 
-      startProcess();
+      restartProcess();
 
       return;
     }
@@ -95,27 +115,35 @@ export default function Home() {
     setIsEditMode(true);
   };
 
-  const startProcess = () => {
-    const arrayOfIds = Array.from(
+  /**
+   * Restart the process with up to date initial configs
+   */
+  const restartProcess = () => {
+    const arrayOfInitialCustomers = Array.from(
       { length: initialCustomers },
       (_, index) => index + 1
     );
-    setLiveCustomers(arrayOfIds);
+    setLastCustomerNumber(initialCustomers);
+    setCustomersInQueue(arrayOfInitialCustomers);
   };
 
   return (
     <main className={styles.main}>
       <h1>Bank counter</h1>
-      <Table liveCustomers={liveCustomers} onAddCustomer={addLiveCustomer}>
+      <Table
+        customersInQueue={customersInQueue}
+        lastCustomerNumber={lastCustomerNumber}
+        onAddCustomerToQueue={addCustomerToQueue}
+      >
         {counters.map(({ id, name, processingTime }) => (
           <TableItem
             key={id}
             id={id}
             name={name}
-            reset={isEditMode}
+            reset={isReset}
             processingTime={processingTime}
-            liveCustomers={liveCustomers}
-            onLiveCustomersChange={handleLiveCustomersChange}
+            customersInQueue={customersInQueue}
+            onQueueCustomersChange={handleQueueCustomersChange}
           />
         ))}
       </Table>
@@ -124,10 +152,19 @@ export default function Home() {
         customers={initialCustomers}
         isDisabled={!isEditMode}
         onInputChange={handleProcessingTimeChange}
-        onInputBlur={handleInputBlur}
-        onCustomersNumberChange={handleInitialCustomersChange}
+        onCustomersNumberChange={setInitialCustomersNumber}
       />
-      <button onClick={changeInit}>Change init</button>
+      <button
+        className={styles.main__changeSettingsButton}
+        onClick={changeInit}
+      >
+        {isEditMode ? "Apply Changes" : "Change init"}
+      </button>
+      {hasError && (
+        <p className={styles.main__error}>
+          Please enter processing time values between 2 and 5 (seconds)
+        </p>
+      )}
     </main>
   );
 }

@@ -1,8 +1,12 @@
+@import "../../app/styles/mixins";
+
 .table {
   border-collapse: collapse;
+  width: min(100%, 600px);
+  table-layout: fixed;
 
   th {
-    width: 200px;
+    text-align: start;
   }
 
   tr:not(:last-child) {
@@ -11,15 +15,24 @@
 
   td {
     padding-block: 16px;
+    word-break: break-all;
   }
 
   caption {
     caption-side: bottom;
+  }
 
-    div {
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-    }
+  &__addCustomerButton {
+    background-color: var(--secondary-color);
+    border-color: var(--secondary-color);
+    width: min(320px, 100%);
+    margin-inline: auto;
+
+    @include button;
+  }
+
+  &__captionWrapper {
+    display: grid;
+    gap: 10px;
   }
 }
