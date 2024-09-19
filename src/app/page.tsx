@@ -2,7 +2,7 @@
 
 import Table from "@/components/Table/Table";
 import styles from "./page.module.scss";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Counter } from "./types/common";
 import InitialState from "@/components/InitialState/InitialState";
 import {
@@ -20,6 +20,7 @@ export default function Home() {
   const [isReset, setIsReset] = useState(false);
   const [lastCustomerNumber, setLastCustomerNumber] = useState(0);
   const [hasError, setHasError] = useState<boolean>(false);
+  const errorRef = useRef<HTMLParagraphElement>(null);
 
   /**
    * Set processing time of specific counter
@@ -127,6 +128,16 @@ export default function Home() {
     setCustomersInQueue(arrayOfInitialCustomers);
   };
 
+  useEffect(() => {
+    if (hasError) {
+      errorRef.current?.scrollIntoView({
+        behavior: "smooth",
+        block: "end",
+        inline: "nearest",
+      });
+    }
+  }, [hasError]);
+
   return (
     <main className={styles.main}>
       <h1>Bank counter</h1>
@@ -161,7 +172,7 @@ export default function Home() {
         {isEditMode ? "Apply Changes" : "Change init"}
       </button>
       {hasError && (
-        <p className={styles.main__error}>
+        <p ref={errorRef} className={styles.main__error}>
           Please enter processing time values between 2 and 5 (seconds)
         </p>
       )}
